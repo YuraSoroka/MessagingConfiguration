@@ -26,13 +26,13 @@ builder.Services.AddMassTransit(config =>
 
         cfg.SubscriptionEndpoint("day-of-week-subscription", "dayoftheweek-topic", e =>
         {
-            e.ConfigureConsumer<DayOfTheWeekConsumer>(context);
+            e.ConfigureConsumer<DayOfTheWeekConsumer>(context, e => e.UseMessageRetry(x => x.Interval(5, TimeSpan.FromSeconds(5))));
             e.Filter = new SqlRuleFilter("Name = 'Monday'");
         });
 
         cfg.SubscriptionEndpoint("day-of-week-subscription2", "dayoftheweek-topic", e =>
         {
-            e.ConfigureConsumer<DayOfTheWeekConsumer>(context);
+            e.ConfigureConsumer<DayOfTheWeekConsumer>(context, e => e.UseMessageRetry(x => x.Interval(5, TimeSpan.FromSeconds(2))));
             e.Filter = new SqlRuleFilter("Name <> 'Monday'");
         });
     });
