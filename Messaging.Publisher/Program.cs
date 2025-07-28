@@ -1,9 +1,28 @@
+using MassTransit;
+using Messaging.Contracts;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddMassTransit(config =>
+{
+    config.UsingAzureServiceBus((context, cfg) =>
+    {
+        cfg.Host(builder.Configuration.GetValue<string>("AzureServiceBus:ConnectionString"));
+
+        cfg.ConfigureEndpoints(context);
+
+        cfg.Message<DayOfTheWeek>(e =>
+        {
+            e.SetEntityName("dayoftheweek-topic");
+        });
+    });
+});
+
 
 var app = builder.Build();
 
@@ -16,29 +35,24 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
+app.MapPost("/publish", async (ILogger<Program> logger, IPublishEndpoint publishEndpoint) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    await publishEndpoint.Publish(new DayOfTheWeek { DayNumber = 1, Name = "Monday" },
+        ctx =>
+        {
+            ctx.Headers.Set("Name", "Monday");
+            ctx.Headers.Set("MessageType", nameof(DayOfTheWeek));
+        });
 
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast = Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    await publishEndpoint.Publish(new DayOfTheWeek { DayNumber = 1, Name = "Tuesday" },
+        ctx =>
+        {
+            ctx.Headers.Set("Name", "Sunday");
+        });
+
+    logger.LogInformation("message sent");
 })
-.WithName("GetWeatherForecast")
+.WithName("publish")
 .WithOpenApi();
 
 app.Run();
-
-internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
