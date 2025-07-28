@@ -17,8 +17,7 @@ builder.Services.AddMassTransit(config =>
 
     config.UsingAzureServiceBus((context, cfg) =>
     {
-        cfg.Host(builder.Configuration.GetValue<string>("AzureServiceBus:ConnectionString"));
-
+        cfg.Host(builder.Configuration.GetValue<string>("AzureServiceBus:ConnectionString"), e => e.TransportType = Azure.Messaging.ServiceBus.ServiceBusTransportType.AmqpTcp);
         /*cfg.Message<DayOfTheWeek>(m =>
         {
             m.SetEntityName("configured-name");
