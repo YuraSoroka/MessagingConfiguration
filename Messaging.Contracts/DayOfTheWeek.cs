@@ -1,6 +1,6 @@
 ﻿namespace Messaging.Contracts;
 
-public class DayOfTheWeek
+public class DayOfTheWeek : TimeOfDay
 {
     public int DayNumber { get; init; }
     public string Name { get; init; } = string.Empty;

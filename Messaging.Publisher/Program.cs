@@ -20,6 +20,17 @@ builder.Services.AddMassTransit(config =>
         {
             e.SetEntityName("dayoftheweek-topic");
         });
+
+        //If not exclude - than it will execute createIfNotExists method, which require manage permission.
+        cfg.Publish<DayOfTheWeek>(e =>
+        {
+            e.Exclude = true;
+        });
+
+        //cfg.Publish<TimeOfDay>(e =>
+        //{
+        //    e.Exclude = true;
+        //});
     });
 });
 
