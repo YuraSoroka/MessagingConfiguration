@@ -17,16 +17,16 @@ builder.Services.AddMassTransit(config =>
 
     config.UsingAzureServiceBus((context, cfg) =>
     {
-        cfg.Host(builder.Configuration.GetValue<string>("AzureServiceBus:ConnectionString"), e => e.TransportType = Azure.Messaging.ServiceBus.ServiceBusTransportType.AmqpTcp);
-        /*cfg.Message<DayOfTheWeek>(m =>
-        {
-            m.SetEntityName("configured-name");
-        });*/
+        cfg.Host(builder.Configuration.GetValue<string>("AzureServiceBus:ConnectionString"),
+                 e => e.TransportType = Azure.Messaging.ServiceBus.ServiceBusTransportType.AmqpTcp);
 
         cfg.SubscriptionEndpoint("day-of-week-subscription", "dayoftheweek-topic", e =>
         {
-            e.ConfigureConsumer<DayOfTheWeekConsumer>(context, e => e.UseMessageRetry(x => x.Interval(5, TimeSpan.FromSeconds(5))));
-            e.Filter = new SqlRuleFilter("Name = 'Monday'");
+            e.ConfigureConsumer<DayOfTheWeekConsumer>(
+                context,    // After amount of retries will push to dead-letter queue
+                e => e.UseMessageRetry(x => x.Interval(5, TimeSpan.FromSeconds(5))));
+            e.Filter = new SqlRuleFilter("Name = 'Monday'");    // Provide filter. Will be added on automatic subscription creation. Is not recreating if to delete only filter
+            e.PublishFaults = false;    // Disable publishing faults to the topic
         });
 
         cfg.SubscriptionEndpoint("day-of-week-subscription2", "dayoftheweek-topic", e =>
